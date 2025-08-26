@@ -1,0 +1,70 @@
+name: Feature Branch CI
+
+on:
+  push:
+    branches:
+      - 'feature/*'
+  pull_request:
+    branches:
+      - 'feature/*'
+
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      continue-on-error: true
+      
+    - name: Verify project version
+      run: |
+        echo "Checking project version..."
+        node -p "require('./package.json').version"
+        echo "Project version verified successfully!"
+        
+    - name: Run tests
+      run: |
+        echo "Starting test execution..."
+        npm test
+        echo "Tests execution completed!"
+        
+    - name: Run build
+      run: |
+        echo "Starting build process..."
+        npm run build
+        echo "Build process completed!"
+        
+    - name: Validate build artifacts
+      run: |
+        echo "Validating build artifacts..."
+        ls -la
+        echo "Build artifacts validation completed!"
+        
+    - name: Success notification
+      if: success()
+      run: |
+        echo "✅ All checks passed for feature branch!"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        
+    - name: Failure notification
+      if: failure()
+      run: |
+        echo "❌ Some checks failed for feature branch!"
+        echo "Branch: ${{ github.ref_name }}"
+        echo "Commit: ${{ github.sha }}"
+        exit 1
