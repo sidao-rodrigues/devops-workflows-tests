@@ -24,11 +24,25 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+        # Removendo cache para evitar problemas com projetos simples
         
-    - name: Install dependencies
-      run: npm ci
-      continue-on-error: true
+    - name: Verify Node.js installation
+      run: |
+        node --version
+        npm --version
+        
+    - name: Install dependencies (if needed)
+      run: |
+        echo "Checking for dependencies..."
+        if [ -f package-lock.json ]; then
+          echo "Using package-lock.json"
+          npm ci
+        elif [ -f package.json ]; then
+          echo "Using package.json"
+          npm install
+        else
+          echo "No package.json found, skipping dependency installation"
+        fi
       
     - name: Verify project version
       run: |
@@ -66,6 +80,7 @@ jobs:
         echo "✅ All checks passed for fix branch!"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
+        echo "Node.js version: ${{ matrix.node-version }}"
         echo "Fix branch validation completed successfully!"
         
     - name: Failure notification
@@ -74,5 +89,5 @@ jobs:
         echo "❌ Some checks failed for fix branch!"
         echo "Branch: ${{ github.ref_name }}"
         echo "Commit: ${{ github.sha }}"
+        echo "Node.js version: ${{ matrix.node-version }}"
         echo "Please review and fix the issues before proceeding."
-        exit 1
