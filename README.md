@@ -92,4 +92,5 @@ O workflow `Universal CI/CD` será executado automaticamente quando:
 - Você fizer push para **qualquer branch**
 - Você abrir um Pull Request de **qualquer branch** para **qualquer branch**
 
+
 Todas as execuções incluem notificações detalhadas de sucesso e falha para facilitar o acompanhamento.
