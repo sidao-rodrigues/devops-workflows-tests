@@ -1,5 +1,33 @@
 # Guia do Workflow Universal
 
+## 🛡️ IMPORTANTE: Proteção da Branch Main
+
+**A branch `main` está protegida contra pushes diretos!**
+
+### ✅ **Para alterações na main:**
+```bash
+# 1. Partir da main atualizada
+git checkout main
+git pull origin main
+
+# 2. Criar nova branch
+git checkout -b feature/minha-alteracao
+
+# 3. Fazer alterações, commit e push
+git add .
+git commit -m "Minha alteração"
+git push origin feature/minha-alteracao
+
+# 4. Abrir Pull Request no GitHub para main
+# 5. Aguardar aprovação e merge via PR
+```
+
+### ❌ **O que NÃO fazer:**
+```bash
+git checkout main
+git push origin main  # 🚫 SERÁ BLOQUEADO!
+```
+
 ## Como testar o workflow universal
 
 ### 1. Testando com qualquer branch

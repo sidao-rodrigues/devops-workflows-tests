@@ -4,13 +4,41 @@ on:
   push:
     branches:
       - '**'  # Qualquer branch
+      - '!main'  # BLOQUEIA push direto na main
+      - '!master'  # BLOQUEIA push direto na master
   pull_request:
     branches:
-      - '**'  # Qualquer branch
+      - '**'  # Permite PR para qualquer branch (incluindo main)
 
 jobs:
+  # Job para bloquear pushes diretos na main
+  block-main-push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    steps:
+    - name: Block direct push to main
+      run: |
+        echo "🚫 =================================="
+        echo "❌ PUSH DIRETO NA MAIN BLOQUEADO!"
+        echo "=================================="
+        echo "🛡️ Por segurança, pushes diretos na branch main/master não são permitidos."
+        echo ""
+        echo "📋 Para fazer alterações na main, siga este processo:"
+        echo "1. 🌿 Crie uma nova branch: git checkout -b feature/minha-alteracao"
+        echo "2. 💾 Faça suas alterações e commit"
+        echo "3. 📤 Push da branch: git push origin feature/minha-alteracao"
+        echo "4. 🔄 Abra um Pull Request no GitHub"
+        echo "5. ✅ Após aprovação, merge via Pull Request"
+        echo ""
+        echo "🔗 Branch atual: ${{ github.ref_name }}"
+        echo "🔗 Commit: ${{ github.sha }}"
+        echo "=================================="
+        exit 1
+
   test-and-build:
     runs-on: ubuntu-latest
+    # Não executa para pushes diretos na main/master
+    if: ${{ !(github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
     
     steps:
     - name: Checkout code
@@ -106,7 +134,10 @@ jobs:
           echo "✓ Fix branch validation completed"
         elif [[ $BRANCH_NAME == main || $BRANCH_NAME == master ]]; then
           echo "🏠 Main branch detected: $BRANCH_NAME"
-          echo "Running production validations..."
+          echo "🛡️ Este é um Pull Request para a branch principal"
+          echo "✅ Running production validations..."
+          echo "🔍 Executando validações rigorosas para produção..."
+          echo "🚀 Validando estabilidade para deploy em produção..."
           echo "✓ Main branch validation completed"
         elif [[ $BRANCH_NAME == develop || $BRANCH_NAME == dev ]]; then
           echo "🚧 Development branch detected: $BRANCH_NAME"

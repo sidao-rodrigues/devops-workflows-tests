@@ -31,10 +31,27 @@ O workflow identifica automaticamente o tipo de branch e executa validações es
 - `npm run build`: Realiza o build do projeto
 - `npm start`: Inicia a aplicação
 
-## 🔧 Como usar
+## �️ Proteção da Branch Main
 
-1. Crie qualquer branch:
+**IMPORTANTE**: Pushes diretos para a branch `main` estão **BLOQUEADOS** por segurança.
+
+### ✅ **Processo Correto:**
+1. Crie uma nova branch a partir da main
+2. Faça suas alterações na nova branch
+3. Abra um Pull Request para a main
+4. Aguarde a aprovação e merge via PR
+
+### ❌ **O que NÃO fazer:**
+```bash
+git push origin main  # 🚫 BLOQUEADO!
+```
+
+## �🔧 Como usar
+
+1. Crie uma branch a partir da main:
    ```bash
+   git checkout main
+   git pull origin main  # Atualiza a main local
    git checkout -b minha-nova-branch
    # ou
    git checkout -b feature/nova-funcionalidade
@@ -53,7 +70,12 @@ O workflow identifica automaticamente o tipo de branch e executa validações es
    git push origin minha-nova-branch
    ```
 
-4. O workflow será executado automaticamente para **qualquer branch** e você poderá acompanhar o progresso na aba "Actions" do GitHub.
+4. **Para alterações na main**: 
+   - 🔄 Abra um Pull Request no GitHub
+   - ✅ Aguarde aprovação e merge via PR
+   - 🚫 **NUNCA** faça push direto na main
+
+5. O workflow será executado automaticamente para **qualquer branch** e você poderá acompanhar o progresso na aba "Actions" do GitHub.
 
 ## ✅ Características do Workflow Universal
 
