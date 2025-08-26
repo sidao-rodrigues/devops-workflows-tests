@@ -1,0 +1,1 @@
+console.log('RODOU O INDEX.JS');
