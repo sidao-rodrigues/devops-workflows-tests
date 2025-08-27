@@ -4,15 +4,21 @@ Este projeto demonstra um workflow de CI/CD para branches com prefixo `feature/*
 
 ## 🚀 Workflow de CI/CD
 
-### 📋 Workflow 1: Feature Branch CI/CD
+### 📋 Workflow Principal: Feature Branch CI/CD
 O workflow será automaticamente acionado quando:
 - Fizer push para uma branch com prefixo `feature/*`
 - Abrir um Pull Request de uma branch `feature/*`
 
-### 📋 Workflow 2: Auto PR to Develop
-Após o sucesso do CI/CD, automaticamente:
-- ✅ Cria um Pull Request da branch `feature/*` para `develop`
-- ❌ Se o CI/CD falhar, não cria PR e notifica sobre a falha
+**Fluxo de Execução:**
+1. ✅ **Validações de CI/CD** (testes, build, etc.)
+2. 🎯 **Auto-criação de PR** (em caso de sucesso)
+
+### 📋 Workflow Reutilizável: Create PR to Develop
+Workflow importado automaticamente que:
+- ✅ Cria Pull Request da branch `feature/*` para `develop`
+- 🔍 Verifica se PR já existe (evita duplicatas)
+- 🏗️ Cria branch `develop` se não existir
+- ❌ Só executa se CI/CD for bem-sucedido
 
 ### ✅ Validações Executadas
 

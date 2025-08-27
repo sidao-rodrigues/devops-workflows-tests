@@ -90,3 +90,15 @@ jobs:
           echo "🔍 Please check the logs above for details"
           echo "🛠️ Fix the issues and push again"
           exit 1
+
+  # Job para criar PR automaticamente após sucesso
+  create-pr:
+    name: Auto Create PR
+    needs: test-and-build
+    if: success()
+    uses: ./.github/workflows/create-pr-to-develop.yml
+    with:
+      source_branch: ${{ github.ref_name }}
+      pr_title: "feat: Auto PR from ${{ github.ref_name }}"
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

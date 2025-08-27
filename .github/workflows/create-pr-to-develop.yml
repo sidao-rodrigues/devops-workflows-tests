@@ -1,0 +1,174 @@
+name: Create Pull Request to Develop
+
+# Workflow reutilizável que pode ser chamado por outros workflows
+on:
+  workflow_call:
+    inputs:
+      source_branch:
+        description: 'Branch de origem para o PR'
+        required: true
+        type: string
+      pr_title:
+        description: 'Título do Pull Request'
+        required: false
+        type: string
+        default: 'feat: Auto PR from feature branch'
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+
+# Permissões necessárias para criar Pull Requests
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  create-pull-request:
+    name: Create PR to Develop
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Checkout do código
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      # Obter informações da branch
+      - name: Get Branch Info
+        id: branch_info
+        run: |
+          BRANCH_NAME="${{ inputs.source_branch }}"
+          COMMIT_SHA="${{ github.sha }}"
+          AUTHOR="${{ github.actor }}"
+          
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "commit_sha=$COMMIT_SHA" >> $GITHUB_OUTPUT
+          echo "author=$AUTHOR" >> $GITHUB_OUTPUT
+          
+          # Criar título personalizado se não fornecido
+          if [ -z "${{ inputs.pr_title }}" ]; then
+            PR_TITLE="feat: Auto PR from $BRANCH_NAME"
+          else
+            PR_TITLE="${{ inputs.pr_title }}"
+          fi
+          echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
+          
+          # Criar corpo do PR
+          echo "pr_body=🤖 **Automated Pull Request**
+          
+          Esta PR foi criada automaticamente após o sucesso do workflow de CI/CD.
+          
+          **Branch de origem:** \`$BRANCH_NAME\`
+          **Branch de destino:** \`develop\`
+          **Commit:** \`$COMMIT_SHA\`
+          **Author:** $AUTHOR
+          
+          ### ✅ Validações Executadas com Sucesso:
+          - ✅ Setup do Node.js 20 concluído
+          - ✅ Dependências instaladas com sucesso
+          - ✅ Testes executados e aprovados
+          - ✅ Build executado com sucesso
+          - ✅ Aplicação inicializa corretamente
+          
+          ### 📋 Próximos Passos:
+          1. 👀 Revisar as mudanças no código
+          2. 🧪 Testar localmente se necessário
+          3. ✅ Aprovar e fazer merge para develop
+          
+          ---
+          *Este PR foi criado automaticamente pelo workflow de CI/CD*
+          " >> $GITHUB_OUTPUT
+      
+      # Verificar se a branch develop existe
+      - name: Check if develop branch exists
+        id: check_develop
+        run: |
+          if git ls-remote --heads origin develop | grep -q "refs/heads/develop"; then
+            echo "develop_exists=true" >> $GITHUB_OUTPUT
+            echo "✅ Branch 'develop' encontrada"
+          else
+            echo "develop_exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Branch 'develop' não encontrada. Será criada a partir da branch main."
+          fi
+      
+      # Criar branch develop se não existir
+      - name: Create develop branch if needed
+        if: steps.check_develop.outputs.develop_exists == 'false'
+        run: |
+          echo "🔧 Criando branch develop..."
+          git fetch origin
+          git checkout -b develop origin/main
+          git push origin develop
+          echo "✅ Branch develop criada com sucesso!"
+      
+      # Verificar se PR já existe
+      - name: Check if PR already exists
+        id: check_pr
+        run: |
+          echo "🔍 Verificando se PR já existe..."
+          EXISTING_PR=$(gh pr list \
+            --head "${{ steps.branch_info.outputs.branch_name }}" \
+            --base develop \
+            --json number,url \
+            --jq '.[0] // empty')
+          
+          if [ -n "$EXISTING_PR" ]; then
+            PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.number')
+            PR_URL=$(echo "$EXISTING_PR" | jq -r '.url')
+            echo "pr_exists=true" >> $GITHUB_OUTPUT
+            echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+            echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+            echo "ℹ️ PR já existe: #$PR_NUMBER ($PR_URL)"
+          else
+            echo "pr_exists=false" >> $GITHUB_OUTPUT
+            echo "✅ Nenhuma PR existente encontrada"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Criar Pull Request se não existir
+      - name: Create Pull Request
+        if: steps.check_pr.outputs.pr_exists == 'false'
+        id: create_pr
+        run: |
+          echo "🚀 Criando Pull Request..."
+          PR_URL=$(gh pr create \
+            --title "${{ steps.branch_info.outputs.pr_title }}" \
+            --body "${{ steps.branch_info.outputs.pr_body }}" \
+            --base develop \
+            --head "${{ steps.branch_info.outputs.branch_name }}")
+          
+          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+          echo "🎉 Pull Request criada com sucesso: $PR_URL"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Comentário de sucesso para nova PR
+      - name: Success Notification - New PR
+        if: steps.check_pr.outputs.pr_exists == 'false'
+        run: |
+          echo "🎉 **Pull Request criada com sucesso!**"
+          echo ""
+          echo "📋 **Detalhes da PR:**"
+          echo "   - 🌿 Branch origem: ${{ steps.branch_info.outputs.branch_name }}"
+          echo "   - 🎯 Branch destino: develop"
+          echo "   - 🔗 URL: ${{ steps.create_pr.outputs.pr_url }}"
+          echo "   - 👤 Author: ${{ steps.branch_info.outputs.author }}"
+          echo ""
+          echo "✅ **Workflow de automação concluído com sucesso!**"
+      
+      # Notificação se PR já existe
+      - name: PR Already Exists Notification
+        if: steps.check_pr.outputs.pr_exists == 'true'
+        run: |
+          echo "ℹ️ **Pull Request já existe**"
+          echo ""
+          echo "📋 **Detalhes da PR existente:**"
+          echo "   - 🌿 Branch origem: ${{ steps.branch_info.outputs.branch_name }}"
+          echo "   - 🎯 Branch destino: develop"
+          echo "   - 🔢 Número: #${{ steps.check_pr.outputs.pr_number }}"
+          echo "   - 🔗 URL: ${{ steps.check_pr.outputs.pr_url }}"
+          echo ""
+          echo "✅ **Nenhuma ação necessária - PR já existe!**"
