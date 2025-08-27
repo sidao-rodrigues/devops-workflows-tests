@@ -15,7 +15,7 @@ Este projeto demonstra a implementação de um workflow universal de CI/CD usand
   - ✅ Processo de build
   - ✅ Validação da estrutura do projeto
   - ✅ Ações específicas por tipo de branch
-  - 🚀 **Criação automática de PR para dev** (após sucesso)
+  - 🚀 **Criação automática de PR para dev** (após sucesso) - ✅ CORRIGIDO
 
 ### 🚀 Criação Automática de Pull Request para Dev
 Quando build e testes passam com sucesso, o workflow cria automaticamente um Pull Request para a branch `dev`:
