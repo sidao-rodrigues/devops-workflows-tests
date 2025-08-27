@@ -131,7 +131,7 @@ jobs:
             --head "${{ steps.branch_info.outputs.branch_name }}" \
             --base develop \
             --json number,url \
-            --jq '.[0] // empty')
+            --jq '.[0] // empty' || echo "")
           
           if [ -n "$EXISTING_PR" ]; then
             PR_NUMBER=$(echo "$EXISTING_PR" | jq -r '.number')
@@ -147,63 +147,89 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
-      # Criar Pull Request se não existir
-      - name: Create Pull Request
-        if: steps.check_pr.outputs.pr_exists == 'false'
-        id: create_pr
-        uses: repo-sync/pull-request@v2
-        with:
-          source_branch: ${{ steps.branch_info.outputs.branch_name }}
-          destination_branch: develop
-          pr_title: ${{ steps.branch_info.outputs.pr_title }}
-          pr_body: |
-            🤖 **Automated Pull Request**
-            
-            Esta PR foi criada automaticamente após o sucesso do workflow de CI/CD.
-            
-            **Branch de origem:** `${{ steps.branch_info.outputs.branch_name }}`
-            **Branch de destino:** `develop`
-            **Commit:** `${{ steps.branch_info.outputs.commit_sha }}`
-            **Author:** ${{ steps.branch_info.outputs.author }}
-            
-            ### ✅ Validações Executadas com Sucesso:
-            - ✅ Setup do Node.js 20 concluído
-            - ✅ Dependências instaladas com sucesso
-            - ✅ Testes executados e aprovados
-            - ✅ Build executado com sucesso
-            - ✅ Aplicação inicializa corretamente
-            
-            ### 📋 Próximos Passos:
-            1. 👀 Revisar as mudanças no código
-            2. 🧪 Testar localmente se necessário
-            3. ✅ Aprovar e fazer merge para develop
-            
-            ---
-            *Este PR foi criado automaticamente pelo workflow de CI/CD*
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Obter informações do PR criado
-      - name: Get PR Info
+      # Instruções para criar PR manualmente (devido à política do repositório)
+      - name: PR Creation Instructions
         if: steps.check_pr.outputs.pr_exists == 'false'
         run: |
-          echo "🎉 Pull Request criada com sucesso!"
-          echo "pr_number=${{ steps.create_pr.outputs.pr_number }}" >> $GITHUB_OUTPUT
-          echo "pr_url=${{ steps.create_pr.outputs.pr_url }}" >> $GITHUB_OUTPUT
-      
-      # Comentário de sucesso para nova PR
-      - name: Success Notification - New PR
-        if: steps.check_pr.outputs.pr_exists == 'false'
-        run: |
-          echo "🎉 **Pull Request criada com sucesso!**"
+          echo "🤖 **Automação de Pull Request**"
           echo ""
-          echo "📋 **Detalhes da PR:**"
+          echo "✅ **CI/CD executado com sucesso!** Todos os testes passaram."
+          echo ""
+          echo "⚠️ **Nota:** Este repositório tem políticas de segurança que impedem"
+          echo "o GitHub Actions de criar Pull Requests automaticamente."
+          echo ""
+          echo "📋 **Para criar o PR manualmente, execute:**"
+          echo ""
+          echo "1. **Via GitHub CLI (gh):**"
+          echo "   \`\`\`bash"
+          echo "   gh pr create \\"
+          echo "     --title '${{ steps.branch_info.outputs.pr_title }}' \\"
+          echo "     --body-file pr_body.md \\"
+          echo "     --base develop \\"
+          echo "     --head ${{ steps.branch_info.outputs.branch_name }}"
+          echo "   \`\`\`"
+          echo ""
+          echo "2. **Via interface web do GitHub:**"
+          echo "   - Acesse: https://github.com/${{ github.repository }}/compare/develop...${{ steps.branch_info.outputs.branch_name }}"
+          echo "   - Clique em 'Create pull request'"
+          echo "   - Use o título: '${{ steps.branch_info.outputs.pr_title }}'"
+          echo ""
+          echo "📝 **Detalhes do PR:**"
           echo "   - 🌿 Branch origem: ${{ steps.branch_info.outputs.branch_name }}"
           echo "   - 🎯 Branch destino: develop"
-          echo "   - 🔗 URL: ${{ steps.create_pr.outputs.pr_url }}"
           echo "   - 👤 Author: ${{ steps.branch_info.outputs.author }}"
-          echo "   - 🔢 Número: #${{ steps.create_pr.outputs.pr_number }}"
+          echo "   - 🔗 Commit: ${{ steps.branch_info.outputs.commit_sha }}"
           echo ""
-          echo "✅ **Workflow de automação concluído com sucesso!**"
+          echo "✅ **Validações realizadas com sucesso:**"
+          echo "   - ✅ Setup do Node.js 20 concluído"
+          echo "   - ✅ Dependências instaladas"
+          echo "   - ✅ Testes executados e aprovados"
+          echo "   - ✅ Build executado com sucesso"
+          echo "   - ✅ Aplicação inicializa corretamente"
+      
+      # Criar arquivo com instruções detalhadas
+      - name: Create PR Instructions File
+        if: steps.check_pr.outputs.pr_exists == 'false'
+        run: |
+          cat > PR_INSTRUCTIONS.md << 'EOF'
+          # 🤖 Instruções para Criar Pull Request
+          
+          ## ✅ CI/CD Executado com Sucesso!
+          
+          Todos os testes passaram e a branch está pronta para merge.
+          
+          ## 📋 Detalhes da Branch
+          
+          - **Branch origem:** `${{ steps.branch_info.outputs.branch_name }}`
+          - **Branch destino:** `develop`
+          - **Author:** ${{ steps.branch_info.outputs.author }}
+          - **Commit:** `${{ steps.branch_info.outputs.commit_sha }}`
+          
+          ## 🚀 Como Criar o Pull Request
+          
+          ### Opção 1: GitHub CLI
+          ```bash
+          gh pr create \
+            --title "${{ steps.branch_info.outputs.pr_title }}" \
+            --body-file pr_body.md \
+            --base develop \
+            --head ${{ steps.branch_info.outputs.branch_name }}
+          ```
+          
+          ### Opção 2: Interface Web
+          [Clique aqui para criar o PR](https://github.com/${{ github.repository }}/compare/develop...${{ steps.branch_info.outputs.branch_name }})
+          
+          ## ✅ Validações Realizadas
+          
+          - ✅ Setup do Node.js 20 concluído
+          - ✅ Dependências instaladas com sucesso
+          - ✅ Testes executados e aprovados
+          - ✅ Build executado com sucesso
+          - ✅ Aplicação inicializa corretamente
+          
+          EOF
+          
+          echo "📄 Arquivo de instruções criado: PR_INSTRUCTIONS.md"
       
       # Notificação se PR já existe
       - name: PR Already Exists Notification
@@ -217,4 +243,9 @@ jobs:
           echo "   - 🔢 Número: #${{ steps.check_pr.outputs.pr_number }}"
           echo "   - 🔗 URL: ${{ steps.check_pr.outputs.pr_url }}"
           echo ""
-          echo "✅ **Nenhuma ação necessária - PR já existe!**"
+          echo "✅ **Nenhuma ação necessária - PR já existe e está ativa!**"
+          echo ""
+          echo "🎯 **Próximos passos:**"
+          echo "   1. Revisar a PR existente"
+          echo "   2. Adicionar reviewers se necessário"
+          echo "   3. Aprovar e fazer merge quando estiver tudo OK"
