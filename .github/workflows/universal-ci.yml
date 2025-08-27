@@ -157,20 +157,25 @@ jobs:
           # Verificar se a branch dev existe
           if git ls-remote --heads origin dev | grep -q 'refs/heads/dev'; then
             echo "✅ Branch 'dev' found"
+            
+            # Criar PR usando GitHub CLI
+            gh pr create \
+              --title "🚀 Auto PR: ${{ github.ref_name }} → dev" \
+              --body "Pull Request Automático para Dev - Branch: ${{ github.ref_name }} - Commit: ${{ github.sha }} - Testes e build executados com sucesso" \
+              --base dev \
+              --head ${{ github.ref_name }} \
+              --label "auto-pr,ready-for-review"
+            
+            echo "✅ Pull Request criado com sucesso!"
           else
-            echo "⚠️ Branch 'dev' not found, creating it..."
-            git checkout -b dev
-            git push origin dev
-            git checkout ${{ github.ref_name }}
+            echo "⚠️ Branch 'dev' não encontrada no repositório"
+            echo "📋 Para usar esta funcionalidade:"
+            echo "1. Crie a branch 'dev' manualmente: git checkout -b dev"
+            echo "2. Faça push da branch: git push origin dev"
+            echo "3. Execute novamente o workflow"
+            echo ""
+            echo "🔄 Workflow continuará sem criar PR automático"
           fi
-          
-          # Criar PR usando GitHub CLI
-          gh pr create \
-            --title "🚀 Auto PR: ${{ github.ref_name }} → dev" \
-            --body "Pull Request Automático para Dev - Branch: ${{ github.ref_name }} - Commit: ${{ github.sha }} - Testes e build executados com sucesso" \
-            --base dev \
-            --head ${{ github.ref_name }} \
-            --label "auto-pr,ready-for-review"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
@@ -178,15 +183,23 @@ jobs:
         if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
         run: |
           echo "🔄 =================================="
-          echo "✅ PULL REQUEST CRIADO PARA DEV!"
+          echo "📋 RESULTADO DA CRIAÇÃO DE PR"
           echo "=================================="
           echo "📋 Detalhes:"
           echo "   Branch origem: ${{ github.ref_name }}"
           echo "   Branch destino: dev"
           echo "   Método: GitHub CLI (gh pr create)"
-          echo "   Labels: auto-pr, ready-for-review"
+          echo ""
+          
+          # Verificar novamente se branch dev existe para mostrar status correto
+          if git ls-remote --heads origin dev | grep -q 'refs/heads/dev'; then
+            echo "✅ STATUS: Pull Request criado com sucesso!"
+            echo "🔗 Verifique a aba 'Pull Requests' no GitHub"
+          else
+            echo "⚠️ STATUS: PR não criado - branch 'dev' não existe"
+            echo "📝 Crie a branch 'dev' manualmente para habilitar PRs automáticos"
+          fi
           echo "=================================="
-          echo "🔗 Verifique a aba 'Pull Requests' no GitHub"
           
       - name: Success notification
         if: success()
@@ -205,8 +218,14 @@ jobs:
           BRANCH_NAME="${{ github.ref_name }}"
           if [[ "${{ github.event_name }}" == "push" && "$BRANCH_NAME" != "dev" && "$BRANCH_NAME" != "develop" && "$BRANCH_NAME" != "main" && "$BRANCH_NAME" != "master" ]]; then
             echo "🔄 Ação Adicional:"
-            echo "   ✅ Pull Request criado automaticamente para 'dev'"
-            echo "   📝 Verifique a aba 'Pull Requests' no GitHub"
+            # Verificar se branch dev existe para mostrar status correto
+            if git ls-remote --heads origin dev | grep -q 'refs/heads/dev'; then
+              echo "   ✅ Pull Request criado automaticamente para 'dev'"
+              echo "   📝 Verifique a aba 'Pull Requests' no GitHub"
+            else
+              echo "   ⚠️ PR automático não criado - branch 'dev' não existe"
+              echo "   📝 Crie a branch 'dev' para habilitar PRs automáticos"
+            fi
           fi
           echo "=================================="
           
