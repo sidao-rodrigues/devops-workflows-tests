@@ -13,9 +13,6 @@ on:
         required: false
         type: string
         default: 'feat: Auto PR from feature branch'
-    secrets:
-      GITHUB_TOKEN:
-        required: true
 
 # Permissões necessárias para criar Pull Requests
 permissions:
