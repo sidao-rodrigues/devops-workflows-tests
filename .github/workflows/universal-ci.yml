@@ -163,8 +163,7 @@ jobs:
               --title "🚀 Auto PR: ${{ github.ref_name }} → dev" \
               --body "Pull Request Automático para Dev - Branch: ${{ github.ref_name }} - Commit: ${{ github.sha }} - Testes e build executados com sucesso" \
               --base dev \
-              --head ${{ github.ref_name }} \
-              --label "auto-pr,ready-for-review"
+              --head ${{ github.ref_name }}
             
             echo "✅ Pull Request criado com sucesso!"
           else
