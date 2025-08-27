@@ -15,6 +15,15 @@ Este projeto demonstra a implementação de um workflow universal de CI/CD usand
   - ✅ Processo de build
   - ✅ Validação da estrutura do projeto
   - ✅ Ações específicas por tipo de branch
+  - 🚀 **Criação automática de PR para dev** (após sucesso)
+
+### 🚀 Criação Automática de Pull Request para Dev
+Quando build e testes passam com sucesso, o workflow cria automaticamente um Pull Request para a branch `dev`:
+
+- **Condições**: Testes ✅ + Build ✅ + Push em branch (exceto dev/main/master)
+- **Destino**: Branch `dev`
+- **Labels**: `auto-pr`, `ready-for-review`
+- **Conteúdo**: Template padronizado com resumo das validações
 
 ### 🌿 Detecção Inteligente de Branch
 O workflow identifica automaticamente o tipo de branch e executa validações específicas:
@@ -69,8 +78,14 @@ git push origin main  # 🚫 BLOQUEADO!
    ```bash
    git push origin minha-nova-branch
    ```
+   **🚀 Após push bem-sucedido**: Se testes e build passarem, um PR será criado automaticamente para `dev`
 
-4. **Para alterações na main**: 
+4. **Verifique os resultados**:
+   - 📊 **Actions**: Acompanhe execução do workflow
+   - 🔄 **Pull Requests**: Verifique PR automático criado para `dev`
+   - ✅ **Revise e aprove** o PR para `dev` se necessário
+
+5. **Para alterações na main**: 
    - 🔄 Abra um Pull Request no GitHub
    - ✅ Aguarde aprovação e merge via PR
    - 🚫 **NUNCA** faça push direto na main
@@ -85,11 +100,13 @@ git push origin main  # 🚫 BLOQUEADO!
 - 🔧 **Flexível** - funciona com ou sem dependências
 - 📊 **Informativo** - logs detalhados e notificações claras
 - 🚀 **Rápido** - sem cache desnecessário para projetos simples
+- 🔄 **Automático** - cria PR para dev após sucesso dos testes
 
 ## 📋 Status do Workflow
 
 O workflow `Universal CI/CD` será executado automaticamente quando:
 - Você fizer push para **qualquer branch**
 - Você abrir um Pull Request de **qualquer branch** para **qualquer branch**
+
 
 Todas as execuções incluem notificações detalhadas de sucesso e falha para facilitar o acompanhamento.

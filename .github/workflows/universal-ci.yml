@@ -149,6 +149,55 @@ jobs:
           echo "✓ Generic branch validation completed"
         fi
         
+    - name: Create Pull Request to Dev
+      if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        base: dev
+        head: ${{ github.ref_name }}
+        title: "🚀 Auto PR: ${{ github.ref_name }} → dev"
+        body: |
+          ## 🚀 Pull Request Automático para Dev
+          
+          **Branch de origem:** `${{ github.ref_name }}`  
+          **Branch de destino:** `dev`  
+          **Commit:** ${{ github.sha }}
+          
+          ### ✅ Validações Passaram
+          - ✅ Testes executados com sucesso
+          - ✅ Build realizado com sucesso
+          - ✅ Validações de qualidade aprovadas
+          
+          ### 📋 Resumo das Alterações
+          Este PR foi criado automaticamente após todos os testes e builds passarem com sucesso na branch `${{ github.ref_name }}`.
+          
+          ### 🔍 Próximos Passos
+          1. Revisar as alterações propostas
+          2. Executar testes adicionais se necessário
+          3. Aprovar e fazer merge para `dev`
+          
+          ---
+          _PR criado automaticamente pelo workflow Universal CI/CD_
+        labels: |
+          auto-pr
+          ready-for-review
+        draft: false
+        
+    - name: PR Creation Result
+      if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+      run: |
+        echo "🔄 =================================="
+        echo "✅ PULL REQUEST CRIADO PARA DEV!"
+        echo "=================================="
+        echo "📋 Detalhes:"
+        echo "   Branch origem: ${{ github.ref_name }}"
+        echo "   Branch destino: dev"
+        echo "   Status: Criado automaticamente"
+        echo "   Labels: auto-pr, ready-for-review"
+        echo "=================================="
+        echo "🔗 Verifique a aba 'Pull Requests' no GitHub"
+        
     - name: Success notification
       if: success()
       run: |
@@ -162,6 +211,13 @@ jobs:
         echo "   Node.js: 20.x"
         echo "   Workflow: Universal CI/CD"
         echo "   Status: SUCCESS ✅"
+        echo ""
+        BRANCH_NAME="${{ github.ref_name }}"
+        if [[ "${{ github.event_name }}" == "push" && "$BRANCH_NAME" != "dev" && "$BRANCH_NAME" != "develop" && "$BRANCH_NAME" != "main" && "$BRANCH_NAME" != "master" ]]; then
+          echo "🔄 Ação Adicional:"
+          echo "   ✅ Pull Request criado automaticamente para 'dev'"
+          echo "   📝 Verifique a aba 'Pull Requests' no GitHub"
+        fi
         echo "=================================="
         
     - name: Failure notification
