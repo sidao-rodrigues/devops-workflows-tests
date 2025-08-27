@@ -93,30 +93,35 @@ git push origin feature/login-system
 
 ## ⚙️ **Configuração Técnica**
 
-### Action Utilizada:
+### Método Utilizado:
 ```yaml
 - name: Create Pull Request to Dev
-  uses: peter-evans/create-pull-request@v5
-  with:
-    token: ${{ secrets.GITHUB_TOKEN }}
-    base: dev
-    head: ${{ github.ref_name }}
-    title: "🚀 Auto PR: ${{ github.ref_name }} → dev"
-    labels: |
-      auto-pr
-      ready-for-review
-    draft: false
+  run: |
+    # Verificar se branch dev existe, criar se necessário
+    if git ls-remote --heads origin dev | grep -q 'refs/heads/dev'; then
+      echo "✅ Branch 'dev' found"
+    else
+      echo "⚠️ Branch 'dev' not found, creating it..."
+      git checkout -b dev
+      git push origin dev
+      git checkout ${{ github.ref_name }}
+    fi
+    
+    # Criar PR usando GitHub CLI
+    gh pr create \
+      --title "🚀 Auto PR: ${{ github.ref_name }} → dev" \
+      --base dev \
+      --head ${{ github.ref_name }} \
+      --label "auto-pr,ready-for-review"
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-### Condições:
-```yaml
-if: success() && 
-    github.event_name == 'push' && 
-    github.ref != 'refs/heads/dev' && 
-    github.ref != 'refs/heads/develop' && 
-    github.ref != 'refs/heads/main' && 
-    github.ref != 'refs/heads/master'
-```
+### Características:
+- **Método**: GitHub CLI (`gh pr create`)
+- **Token**: `GITHUB_TOKEN` (automático)
+- **Verificação**: Cria branch `dev` se não existir
+- **Labels**: Aplicadas automaticamente
 
 ## 🎯 **Benefícios**
 

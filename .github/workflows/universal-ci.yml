@@ -16,24 +16,24 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     steps:
-    - name: Block direct push to main
-      run: |
-        echo "🚫 =================================="
-        echo "❌ PUSH DIRETO NA MAIN BLOQUEADO!"
-        echo "=================================="
-        echo "🛡️ Por segurança, pushes diretos na branch main/master não são permitidos."
-        echo ""
-        echo "📋 Para fazer alterações na main, siga este processo:"
-        echo "1. 🌿 Crie uma nova branch: git checkout -b feature/minha-alteracao"
-        echo "2. 💾 Faça suas alterações e commit"
-        echo "3. 📤 Push da branch: git push origin feature/minha-alteracao"
-        echo "4. 🔄 Abra um Pull Request no GitHub"
-        echo "5. ✅ Após aprovação, merge via Pull Request"
-        echo ""
-        echo "🔗 Branch atual: ${{ github.ref_name }}"
-        echo "🔗 Commit: ${{ github.sha }}"
-        echo "=================================="
-        exit 1
+      - name: Block direct push to main
+        run: |
+          echo "🚫 =================================="
+          echo "❌ PUSH DIRETO NA MAIN BLOQUEADO!"
+          echo "=================================="
+          echo "🛡️ Por segurança, pushes diretos na branch main/master não são permitidos."
+          echo ""
+          echo "📋 Para fazer alterações na main, siga este processo:"
+          echo "1. 🌿 Crie uma nova branch: git checkout -b feature/minha-alteracao"
+          echo "2. 💾 Faça suas alterações e commit"
+          echo "3. 📤 Push da branch: git push origin feature/minha-alteracao"
+          echo "4. 🔄 Abra um Pull Request no GitHub"
+          echo "5. ✅ Após aprovação, merge via Pull Request"
+          echo ""
+          echo "🔗 Branch atual: ${{ github.ref_name }}"
+          echo "🔗 Commit: ${{ github.sha }}"
+          echo "=================================="
+          exit 1
 
   test-and-build:
     runs-on: ubuntu-latest
@@ -41,197 +41,187 @@ jobs:
     if: ${{ !(github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')) }}
     
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Setup Node.js 20.x
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20.x'
-        # Sem cache para projetos simples
+      - name: Checkout code
+        uses: actions/checkout@v4
         
-    - name: Verify Node.js installation
-      run: |
-        echo "Node.js version:"
-        node --version
-        echo "NPM version:"
-        npm --version
-        echo "Current working directory:"
-        pwd
-        echo "Branch: ${{ github.ref_name }}"
-        
-    - name: Install dependencies (if needed)
-      run: |
-        echo "Checking for dependencies..."
-        if [ -f package-lock.json ]; then
-          echo "✓ Found package-lock.json - using npm ci"
-          npm ci
-        elif [ -f package.json ]; then
-          echo "✓ Found package.json - using npm install"
-          npm install
-        else
-          echo "⚠️ No package.json found, skipping dependency installation"
-        fi
-        
-    - name: Verify project version
-      run: |
-        echo "📦 Checking project information..."
-        if [ -f package.json ]; then
-          echo "Project name: $(node -p "require('./package.json').name")"
-          echo "Project version: $(node -p "require('./package.json').version")"
-          echo "✅ Project version verified successfully!"
-        else
-          echo "⚠️ No package.json found"
-        fi
-        
-    - name: Run tests
-      run: |
-        echo "🧪 Starting test execution..."
-        if [ -f package.json ]; then
-          npm test
-          echo "✅ Tests execution completed successfully!"
-        else
-          echo "⚠️ No package.json found, skipping tests"
-        fi
-        
-    - name: Run build
-      run: |
-        echo "🔨 Starting build process..."
-        if [ -f package.json ]; then
-          npm run build
-          echo "✅ Build process completed successfully!"
-        else
-          echo "⚠️ No package.json found, skipping build"
-        fi
-        
-    - name: Validate project structure
-      run: |
-        echo "📁 Validating project structure..."
-        echo "Current directory contents:"
-        ls -la
-        echo ""
-        echo "Source directory (if exists):"
-        if [ -d src ]; then
-          ls -la src/
-        else
-          echo "No src directory found"
-        fi
-        echo "✅ Project structure validation completed!"
-        
-    - name: Branch-specific actions
-      run: |
-        echo "🌿 Analyzing branch type..."
-        BRANCH_NAME="${{ github.ref_name }}"
-        
-        if [[ $BRANCH_NAME == feature/* ]]; then
-          echo "🆕 Feature branch detected: $BRANCH_NAME"
-          echo "Running feature-specific validations..."
-          echo "✓ Feature branch validation completed"
-        elif [[ $BRANCH_NAME == fix/* ]]; then
-          echo "🔧 Fix branch detected: $BRANCH_NAME"
-          echo "Running fix-specific validations..."
-          echo "✓ Running additional security checks for fixes..."
-          echo "✓ Fix branch validation completed"
-        elif [[ $BRANCH_NAME == main || $BRANCH_NAME == master ]]; then
-          echo "🏠 Main branch detected: $BRANCH_NAME"
-          echo "🛡️ Este é um Pull Request para a branch principal"
-          echo "✅ Running production validations..."
-          echo "🔍 Executando validações rigorosas para produção..."
-          echo "🚀 Validando estabilidade para deploy em produção..."
-          echo "✓ Main branch validation completed"
-        elif [[ $BRANCH_NAME == develop || $BRANCH_NAME == dev ]]; then
-          echo "🚧 Development branch detected: $BRANCH_NAME"
-          echo "Running development validations..."
-          echo "✓ Development branch validation completed"
-        else
-          echo "🔀 Generic branch detected: $BRANCH_NAME"
-          echo "Running standard validations..."
-          echo "✓ Generic branch validation completed"
-        fi
-        
-    - name: Create Pull Request to Dev
-      if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
-      uses: peter-evans/create-pull-request@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        base: dev
-        head: ${{ github.ref_name }}
-        title: "🚀 Auto PR: ${{ github.ref_name }} → dev"
-        body: |
-          ## 🚀 Pull Request Automático para Dev
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          # Sem cache para projetos simples
           
-          **Branch de origem:** `${{ github.ref_name }}`  
-          **Branch de destino:** `dev`  
-          **Commit:** ${{ github.sha }}
+      - name: Verify Node.js installation
+        run: |
+          echo "Node.js version:"
+          node --version
+          echo "NPM version:"
+          npm --version
+          echo "Current working directory:"
+          pwd
+          echo "Branch: ${{ github.ref_name }}"
           
-          ### ✅ Validações Passaram
-          - ✅ Testes executados com sucesso
-          - ✅ Build realizado com sucesso
-          - ✅ Validações de qualidade aprovadas
+      - name: Install dependencies (if needed)
+        run: |
+          echo "Checking for dependencies..."
+          if [ -f package-lock.json ]; then
+            echo "✓ Found package-lock.json - using npm ci"
+            npm ci
+          elif [ -f package.json ]; then
+            echo "✓ Found package.json - using npm install"
+            npm install
+          else
+            echo "⚠️ No package.json found, skipping dependency installation"
+          fi
           
-          ### 📋 Resumo das Alterações
-          Este PR foi criado automaticamente após todos os testes e builds passarem com sucesso na branch `${{ github.ref_name }}`.
+      - name: Verify project version
+        run: |
+          echo "📦 Checking project information..."
+          if [ -f package.json ]; then
+            echo "Project name: $(node -p "require('./package.json').name")"
+            echo "Project version: $(node -p "require('./package.json').version")"
+            echo "✅ Project version verified successfully!"
+          else
+            echo "⚠️ No package.json found"
+          fi
           
-          ### 🔍 Próximos Passos
-          1. Revisar as alterações propostas
-          2. Executar testes adicionais se necessário
-          3. Aprovar e fazer merge para `dev`
+      - name: Run tests
+        run: |
+          echo "🧪 Starting test execution..."
+          if [ -f package.json ]; then
+            npm test
+            echo "✅ Tests execution completed successfully!"
+          else
+            echo "⚠️ No package.json found, skipping tests"
+          fi
           
-          ---
-          _PR criado automaticamente pelo workflow Universal CI/CD_
-        labels: |
-          auto-pr
-          ready-for-review
-        draft: false
-        
-    - name: PR Creation Result
-      if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
-      run: |
-        echo "🔄 =================================="
-        echo "✅ PULL REQUEST CRIADO PARA DEV!"
-        echo "=================================="
-        echo "📋 Detalhes:"
-        echo "   Branch origem: ${{ github.ref_name }}"
-        echo "   Branch destino: dev"
-        echo "   Status: Criado automaticamente"
-        echo "   Labels: auto-pr, ready-for-review"
-        echo "=================================="
-        echo "🔗 Verifique a aba 'Pull Requests' no GitHub"
-        
-    - name: Success notification
-      if: success()
-      run: |
-        echo ""
-        echo "🎉 =================================="
-        echo "✅ ALL CHECKS PASSED SUCCESSFULLY!"
-        echo "=================================="
-        echo "📋 Summary:"
-        echo "   Branch: ${{ github.ref_name }}"
-        echo "   Commit: ${{ github.sha }}"
-        echo "   Node.js: 20.x"
-        echo "   Workflow: Universal CI/CD"
-        echo "   Status: SUCCESS ✅"
-        echo ""
-        BRANCH_NAME="${{ github.ref_name }}"
-        if [[ "${{ github.event_name }}" == "push" && "$BRANCH_NAME" != "dev" && "$BRANCH_NAME" != "develop" && "$BRANCH_NAME" != "main" && "$BRANCH_NAME" != "master" ]]; then
-          echo "🔄 Ação Adicional:"
-          echo "   ✅ Pull Request criado automaticamente para 'dev'"
-          echo "   📝 Verifique a aba 'Pull Requests' no GitHub"
-        fi
-        echo "=================================="
-        
-    - name: Failure notification
-      if: failure()
-      run: |
-        echo ""
-        echo "💥 =================================="
-        echo "❌ SOME CHECKS FAILED!"
-        echo "=================================="
-        echo "📋 Details:"
-        echo "   Branch: ${{ github.ref_name }}"
-        echo "   Commit: ${{ github.sha }}"
-        echo "   Node.js: 20.x"
-        echo "   Workflow: Universal CI/CD"
-        echo "   Status: FAILED ❌"
-        echo "=================================="
-        echo "🔍 Please check the logs above for details"
+      - name: Run build
+        run: |
+          echo "🔨 Starting build process..."
+          if [ -f package.json ]; then
+            npm run build
+            echo "✅ Build process completed successfully!"
+          else
+            echo "⚠️ No package.json found, skipping build"
+          fi
+          
+      - name: Validate project structure
+        run: |
+          echo "📁 Validating project structure..."
+          echo "Current directory contents:"
+          ls -la
+          echo ""
+          echo "Source directory (if exists):"
+          if [ -d src ]; then
+            ls -la src/
+          else
+            echo "No src directory found"
+          fi
+          echo "✅ Project structure validation completed!"
+          
+      - name: Branch-specific actions
+        run: |
+          echo "🌿 Analyzing branch type..."
+          BRANCH_NAME="${{ github.ref_name }}"
+          
+          if [[ $BRANCH_NAME == feature/* ]]; then
+            echo "🆕 Feature branch detected: $BRANCH_NAME"
+            echo "Running feature-specific validations..."
+            echo "✓ Feature branch validation completed"
+          elif [[ $BRANCH_NAME == fix/* ]]; then
+            echo "🔧 Fix branch detected: $BRANCH_NAME"
+            echo "Running fix-specific validations..."
+            echo "✓ Running additional security checks for fixes..."
+            echo "✓ Fix branch validation completed"
+          elif [[ $BRANCH_NAME == main || $BRANCH_NAME == master ]]; then
+            echo "🏠 Main branch detected: $BRANCH_NAME"
+            echo "🛡️ Este é um Pull Request para a branch principal"
+            echo "✅ Running production validations..."
+            echo "🔍 Executando validações rigorosas para produção..."
+            echo "🚀 Validando estabilidade para deploy em produção..."
+            echo "✓ Main branch validation completed"
+          elif [[ $BRANCH_NAME == develop || $BRANCH_NAME == dev ]]; then
+            echo "🚧 Development branch detected: $BRANCH_NAME"
+            echo "Running development validations..."
+            echo "✓ Development branch validation completed"
+          else
+            echo "🔀 Generic branch detected: $BRANCH_NAME"
+            echo "Running standard validations..."
+            echo "✓ Generic branch validation completed"
+          fi
+          
+      - name: Create Pull Request to Dev
+        if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+        run: |
+          echo "🔄 Creating Pull Request to dev branch..."
+          
+          # Verificar se a branch dev existe
+          if git ls-remote --heads origin dev | grep -q 'refs/heads/dev'; then
+            echo "✅ Branch 'dev' found"
+          else
+            echo "⚠️ Branch 'dev' not found, creating it..."
+            git checkout -b dev
+            git push origin dev
+            git checkout ${{ github.ref_name }}
+          fi
+          
+          # Criar PR usando GitHub CLI
+          gh pr create \
+            --title "🚀 Auto PR: ${{ github.ref_name }} → dev" \
+            --body "Pull Request Automático para Dev - Branch: ${{ github.ref_name }} - Commit: ${{ github.sha }} - Testes e build executados com sucesso" \
+            --base dev \
+            --head ${{ github.ref_name }} \
+            --label "auto-pr,ready-for-review"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: PR Creation Result
+        if: success() && github.event_name == 'push' && github.ref != 'refs/heads/dev' && github.ref != 'refs/heads/develop' && github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+        run: |
+          echo "🔄 =================================="
+          echo "✅ PULL REQUEST CRIADO PARA DEV!"
+          echo "=================================="
+          echo "📋 Detalhes:"
+          echo "   Branch origem: ${{ github.ref_name }}"
+          echo "   Branch destino: dev"
+          echo "   Método: GitHub CLI (gh pr create)"
+          echo "   Labels: auto-pr, ready-for-review"
+          echo "=================================="
+          echo "🔗 Verifique a aba 'Pull Requests' no GitHub"
+          
+      - name: Success notification
+        if: success()
+        run: |
+          echo ""
+          echo "🎉 =================================="
+          echo "✅ ALL CHECKS PASSED SUCCESSFULLY!"
+          echo "=================================="
+          echo "📋 Summary:"
+          echo "   Branch: ${{ github.ref_name }}"
+          echo "   Commit: ${{ github.sha }}"
+          echo "   Node.js: 20.x"
+          echo "   Workflow: Universal CI/CD"
+          echo "   Status: SUCCESS ✅"
+          echo ""
+          BRANCH_NAME="${{ github.ref_name }}"
+          if [[ "${{ github.event_name }}" == "push" && "$BRANCH_NAME" != "dev" && "$BRANCH_NAME" != "develop" && "$BRANCH_NAME" != "main" && "$BRANCH_NAME" != "master" ]]; then
+            echo "🔄 Ação Adicional:"
+            echo "   ✅ Pull Request criado automaticamente para 'dev'"
+            echo "   📝 Verifique a aba 'Pull Requests' no GitHub"
+          fi
+          echo "=================================="
+          
+      - name: Failure notification
+        if: failure()
+        run: |
+          echo ""
+          echo "💥 =================================="
+          echo "❌ SOME CHECKS FAILED!"
+          echo "=================================="
+          echo "📋 Details:"
+          echo "   Branch: ${{ github.ref_name }}"
+          echo "   Commit: ${{ github.sha }}"
+          echo "   Node.js: 20.x"
+          echo "   Workflow: Universal CI/CD"
+          echo "   Status: FAILED ❌"
+          echo "=================================="
+          echo "🔍 Please check the logs above for details"
