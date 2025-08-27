@@ -11,7 +11,7 @@ on:
 
 # Permissões necessárias para o workflow e seus sub-workflows
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   actions: read
 

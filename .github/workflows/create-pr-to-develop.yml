@@ -16,7 +16,7 @@ on:
 
 # Permissões necessárias para criar Pull Requests
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
   actions: read
 
@@ -99,10 +99,28 @@ jobs:
         if: steps.check_develop.outputs.develop_exists == 'false'
         run: |
           echo "🔧 Criando branch develop..."
+          
+          # Configurar git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Fetch todas as branches
           git fetch origin
-          git checkout -b develop origin/main
+          
+          # Verificar se main existe, senão usar master
+          if git ls-remote --heads origin main | grep -q "refs/heads/main"; then
+            BASE_BRANCH="main"
+          else
+            BASE_BRANCH="master"
+          fi
+          
+          echo "📋 Usando branch base: $BASE_BRANCH"
+          
+          # Criar e fazer push da branch develop
+          git checkout -b develop origin/$BASE_BRANCH
           git push origin develop
-          echo "✅ Branch develop criada com sucesso!"
+          
+          echo "✅ Branch develop criada com sucesso a partir de $BASE_BRANCH!"
       
       # Verificar se PR já existe
       - name: Check if PR already exists
