@@ -106,3 +106,5 @@ jobs:
     with:
       source_branch: ${{ github.ref_name }}
       pr_title: "feat: Auto PR from ${{ github.ref_name }}"
+    secrets:
+      PAT_TOKEN: ${{ secrets.PAT_TOKEN }}

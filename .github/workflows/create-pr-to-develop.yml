@@ -13,6 +13,10 @@ on:
         required: false
         type: string
         default: 'feat: Auto PR from feature branch'
+    secrets:
+      PAT_TOKEN:
+        description: 'Personal Access Token with repo permissions'
+        required: false
 
 # Permissões necessárias para criar Pull Requests
 permissions:
@@ -30,7 +34,7 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
           fetch-depth: 0
       
       # Obter informações da branch
@@ -145,11 +149,50 @@ jobs:
             echo "✅ Nenhuma PR existente encontrada"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN || secrets.GITHUB_TOKEN }}
       
-      # Instruções para criar PR manualmente (devido à política do repositório)
-      - name: PR Creation Instructions
-        if: steps.check_pr.outputs.pr_exists == 'false'
+      # Tentar criar PR automaticamente (se PAT disponível)
+      - name: Attempt Automatic PR Creation
+        if: steps.check_pr.outputs.pr_exists == 'false' && secrets.PAT_TOKEN != ''
+        id: auto_pr
+        run: |
+          echo "🚀 Tentando criar PR automaticamente com PAT..."
+          
+          PR_URL=$(gh pr create \
+            --title "${{ steps.branch_info.outputs.pr_title }}" \
+            --body-file pr_body.md \
+            --base develop \
+            --head "${{ steps.branch_info.outputs.branch_name }}" \
+            2>/dev/null || echo "FAILED")
+          
+          if [ "$PR_URL" != "FAILED" ]; then
+            echo "pr_created=true" >> $GITHUB_OUTPUT
+            echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
+            echo "🎉 PR criada automaticamente: $PR_URL"
+          else
+            echo "pr_created=false" >> $GITHUB_OUTPUT
+            echo "⚠️ Falha na criação automática, usando instruções manuais..."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+      
+      # Notificação de sucesso automático
+      - name: Automatic PR Success
+        if: steps.check_pr.outputs.pr_exists == 'false' && steps.auto_pr.outputs.pr_created == 'true'
+        run: |
+          echo "🎉 **Pull Request criada automaticamente!**"
+          echo ""
+          echo "📋 **Detalhes da PR:**"
+          echo "   - 🌿 Branch origem: ${{ steps.branch_info.outputs.branch_name }}"
+          echo "   - 🎯 Branch destino: develop"
+          echo "   - 🔗 URL: ${{ steps.auto_pr.outputs.pr_url }}"
+          echo "   - 👤 Author: ${{ steps.branch_info.outputs.author }}"
+          echo ""
+          echo "✅ **Automação completa realizada com sucesso!**"
+      
+      # Instruções para criar PR manualmente (fallback)
+      - name: Manual PR Creation Instructions
+        if: steps.check_pr.outputs.pr_exists == 'false' && (secrets.PAT_TOKEN == '' || steps.auto_pr.outputs.pr_created == 'false')
         run: |
           echo "🤖 **Automação de Pull Request**"
           echo ""
