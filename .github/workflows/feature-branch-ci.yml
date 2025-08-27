@@ -24,11 +24,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm'
       
       # Instalação das dependências
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
       
       # Verificação de lint (se houver)
       - name: Run Lint Check
