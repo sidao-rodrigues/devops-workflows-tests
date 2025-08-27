@@ -151,18 +151,44 @@ jobs:
       - name: Create Pull Request
         if: steps.check_pr.outputs.pr_exists == 'false'
         id: create_pr
+        uses: repo-sync/pull-request@v2
+        with:
+          source_branch: ${{ steps.branch_info.outputs.branch_name }}
+          destination_branch: develop
+          pr_title: ${{ steps.branch_info.outputs.pr_title }}
+          pr_body: |
+            🤖 **Automated Pull Request**
+            
+            Esta PR foi criada automaticamente após o sucesso do workflow de CI/CD.
+            
+            **Branch de origem:** `${{ steps.branch_info.outputs.branch_name }}`
+            **Branch de destino:** `develop`
+            **Commit:** `${{ steps.branch_info.outputs.commit_sha }}`
+            **Author:** ${{ steps.branch_info.outputs.author }}
+            
+            ### ✅ Validações Executadas com Sucesso:
+            - ✅ Setup do Node.js 20 concluído
+            - ✅ Dependências instaladas com sucesso
+            - ✅ Testes executados e aprovados
+            - ✅ Build executado com sucesso
+            - ✅ Aplicação inicializa corretamente
+            
+            ### 📋 Próximos Passos:
+            1. 👀 Revisar as mudanças no código
+            2. 🧪 Testar localmente se necessário
+            3. ✅ Aprovar e fazer merge para develop
+            
+            ---
+            *Este PR foi criado automaticamente pelo workflow de CI/CD*
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Obter informações do PR criado
+      - name: Get PR Info
+        if: steps.check_pr.outputs.pr_exists == 'false'
         run: |
-          echo "🚀 Criando Pull Request..."
-          PR_URL=$(gh pr create \
-            --title "${{ steps.branch_info.outputs.pr_title }}" \
-            --body-file pr_body.md \
-            --base develop \
-            --head "${{ steps.branch_info.outputs.branch_name }}")
-          
-          echo "pr_url=$PR_URL" >> $GITHUB_OUTPUT
-          echo "🎉 Pull Request criada com sucesso: $PR_URL"
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "🎉 Pull Request criada com sucesso!"
+          echo "pr_number=${{ steps.create_pr.outputs.pr_number }}" >> $GITHUB_OUTPUT
+          echo "pr_url=${{ steps.create_pr.outputs.pr_url }}" >> $GITHUB_OUTPUT
       
       # Comentário de sucesso para nova PR
       - name: Success Notification - New PR
@@ -175,6 +201,7 @@ jobs:
           echo "   - 🎯 Branch destino: develop"
           echo "   - 🔗 URL: ${{ steps.create_pr.outputs.pr_url }}"
           echo "   - 👤 Author: ${{ steps.branch_info.outputs.author }}"
+          echo "   - 🔢 Número: #${{ steps.create_pr.outputs.pr_number }}"
           echo ""
           echo "✅ **Workflow de automação concluído com sucesso!**"
       
