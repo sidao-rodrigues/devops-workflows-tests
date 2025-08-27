@@ -52,16 +52,19 @@ jobs:
             PR_TITLE="${{ inputs.pr_title }}"
           fi
           echo "pr_title=$PR_TITLE" >> $GITHUB_OUTPUT
-          
-          # Criar corpo do PR
-          echo "pr_body=🤖 **Automated Pull Request**
+      
+      # Criar arquivo temporário com o corpo do PR
+      - name: Create PR Body
+        run: |
+          cat > pr_body.md << 'EOF'
+          🤖 **Automated Pull Request**
           
           Esta PR foi criada automaticamente após o sucesso do workflow de CI/CD.
           
-          **Branch de origem:** \`$BRANCH_NAME\`
-          **Branch de destino:** \`develop\`
-          **Commit:** \`$COMMIT_SHA\`
-          **Author:** $AUTHOR
+          **Branch de origem:** `${{ steps.branch_info.outputs.branch_name }}`
+          **Branch de destino:** `develop`
+          **Commit:** `${{ steps.branch_info.outputs.commit_sha }}`
+          **Author:** ${{ steps.branch_info.outputs.author }}
           
           ### ✅ Validações Executadas com Sucesso:
           - ✅ Setup do Node.js 20 concluído
@@ -77,7 +80,7 @@ jobs:
           
           ---
           *Este PR foi criado automaticamente pelo workflow de CI/CD*
-          " >> $GITHUB_OUTPUT
+          EOF
       
       # Verificar se a branch develop existe
       - name: Check if develop branch exists
@@ -134,7 +137,7 @@ jobs:
           echo "🚀 Criando Pull Request..."
           PR_URL=$(gh pr create \
             --title "${{ steps.branch_info.outputs.pr_title }}" \
-            --body "${{ steps.branch_info.outputs.pr_body }}" \
+            --body-file pr_body.md \
             --base develop \
             --head "${{ steps.branch_info.outputs.branch_name }}")
           
