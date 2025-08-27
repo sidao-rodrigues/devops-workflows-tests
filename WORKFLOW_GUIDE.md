@@ -41,8 +41,6 @@ git checkout -b feature/minha-feature
 git checkout -b fix/meu-fix
 # ou
 git checkout -b hotfix/urgente
-# ou
-git checkout -b develop
 
 # Fazer uma alteração
 echo "// Teste do workflow universal" >> src/index.js
@@ -51,6 +49,8 @@ echo "// Teste do workflow universal" >> src/index.js
 git add .
 git commit -m "Testa workflow universal"
 git push origin nome-da-branch
+
+# 🚀 NOVO: Se testes e build passarem, um PR será criado automaticamente para 'dev'!
 ```
 
 ### 2. O que acontece automaticamente
@@ -65,14 +65,35 @@ git push origin nome-da-branch
 6. **Build**: Executar `npm run build`
 7. **Estrutura**: Validar estrutura do projeto
 8. **Branch específico**: Executar validações específicas do tipo de branch
-9. **Notificação**: Exibir resultado final
+9. **PR Automático**: 🚀 Criar Pull Request para `dev` (se testes/build passaram)
+10. **Notificação**: Exibir resultado final
+
+## 🚀 Pull Request Automático para Dev
+
+### Quando é criado:
+- ✅ Todos os testes passaram
+- ✅ Build executado com sucesso
+- ✅ Push em branch (não dev/main/master)
+
+### O que acontece:
+```bash
+# Após push bem-sucedido de qualquer branch:
+git push origin feature/nova-funcionalidade
+
+# O workflow vai:
+# 1. Executar testes ✅
+# 2. Executar build ✅
+# 3. Criar PR automaticamente: feature/nova-funcionalidade → dev
+# 4. Adicionar labels: auto-pr, ready-for-review
+# 5. Preencher template padronizado
+```
 
 ### 3. Verificando resultados
 
 1. Acesse o repositório no GitHub
-2. Vá para a aba "Actions"
-3. Você verá o workflow "Universal CI/CD" executando
-4. Clique no workflow para ver os detalhes da execução
+2. Vá para a aba "Actions" - Verifique execução do workflow
+3. Vá para a aba "Pull Requests" - **NOVO**: Verifique PR automático criado para `dev`
+4. Clique no workflow/PR para ver os detalhes
 
 ### 4. Scripts de teste local
 
